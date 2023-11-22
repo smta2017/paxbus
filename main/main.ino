@@ -1,4 +1,4 @@
-
+#include <led.h>
 #include <SPI.h>
 #include <MFRC522.h>
 
@@ -144,6 +144,16 @@ void loop() {
 
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
+
+
+
+//***********************************************************
+
+if(mfrc522.uid=="04 F4 11 5C 39 61 80"){
+
+  ledswitch(2,0);
+}
+
 }
 
 void dump_byte_array(byte *buffer, byte bufferSize) {
