@@ -1,3 +1,4 @@
+
 #include <SPI.h>
 #include <MFRC522.h>
 
@@ -8,14 +9,12 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 MFRC522::MIFARE_Key key;
 
 void setup() {
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
     Serial.begin(9600); 
     while (!Serial);    
     SPI.begin();        
     mfrc522.PCD_Init(); 
 
-
+  
     for (byte i = 0; i < 6; i++) {
         key.keyByte[i] = 0xFF;
     }
@@ -50,7 +49,7 @@ void loop() {
         &&  piccType != MFRC522::PICC_TYPE_MIFARE_1K
         &&  piccType != MFRC522::PICC_TYPE_MIFARE_4K) {
         Serial.println(F("This sample only works with MIFARE Classic cards."));
-       
+        return;
     }
 
  
@@ -73,11 +72,13 @@ void loop() {
     if (status != MFRC522::STATUS_OK) {
         Serial.print(F("PCD_Authenticate() failed: "));
         Serial.println(mfrc522.GetStatusCodeName(status));
+        return;
     }
 
 
     Serial.println(F("Current data in sector:"));
     mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
+    Serial.println();
 
   
     Serial.print(F("Reading data from block ")); Serial.print(blockAddr);
@@ -96,8 +97,8 @@ void loop() {
     if (status != MFRC522::STATUS_OK) {
         Serial.print(F("PCD_Authenticate() failed: "));
         Serial.println(mfrc522.GetStatusCodeName(status));
+        return;
     }
-
 
 
     Serial.print(F("Writing data into block ")); Serial.print(blockAddr);
@@ -108,6 +109,7 @@ void loop() {
         Serial.print(F("MIFARE_Write() failed: "));
         Serial.println(mfrc522.GetStatusCodeName(status));
     }
+    Serial.println();
 
   
     Serial.print(F("Reading data from block ")); Serial.print(blockAddr);
@@ -133,45 +135,15 @@ void loop() {
         Serial.println(F("Failure, no match :-("));
         Serial.println(F("  perhaps the write didn't work properly..."));
     }
-   
+    Serial.println();
+        
 
     Serial.println(F("Current data in sector:"));
     mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
+    Serial.println();
 
-
-
- 
-
-
-    String uidString = "";
-    for (byte i = 0; i < mfrc522.uid.size; ++i) {
-      uidString += String(mfrc522.uid.uidByte[i], HEX);
-      uidString.toUpperCase();
-      if (i + 1 < mfrc522.uid.size) {
-        uidString += " ";
-      }
-    }
-
-    Serial.println("UID=====================================================: " + uidString);
-
-
-    if (uidString == "04 F4 11 5C 39 61 80") {
-          Serial.println("UID====================matches=================================: " );
-
-      digitalWrite(2,HIGH);
-      // Do something when the card matches
-    } else {
-          Serial.println("UID====================NOOOOO=================================: " );
-
-      digitalWrite(3,HIGH);
-    }
-
-  
-   
-
-
-
-
+    mfrc522.PICC_HaltA();
+    mfrc522.PCD_StopCrypto1();
 }
 
 void dump_byte_array(byte *buffer, byte bufferSize) {
