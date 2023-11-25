@@ -13,7 +13,7 @@ byte dataBlock[] = {  // NEW DATA to Write
   0xFF, 0xFF, 0xFF, 0xFF,
   0xFF, 0xFF, 0xFF, 0xFF,
   0xFF, 0xFF, 0xFF, 0xFF,
-  0xFF, 0xFF, 0xFF, 0xFF
+  0xFF, 0xFF, 0xF3, 0xFF
 };
 byte buffer[18];
 byte size = sizeof(buffer);
@@ -42,19 +42,27 @@ void setup() {
 
 void loop() {
 
+
+
   if (!mfrc522.PICC_IsNewCardPresent())
     return;
+  Serial.print(F("00000000000000000000000000000000000000"));
 
 
   if (!mfrc522.PICC_ReadCardSerial())
-    return;
+    // return;
+  Serial.print(F("1111111111111111111111111111111"));
 
   printCardInfo();
+  Serial.print(F("22222222222222222222222"));
 
   // if ( ! authCardByKey())
   //   return;
 
-  if (!getSectorData())
+  if (readSectorData()=="A"){
+
+  Serial.print(F("33333333333333333"));
+  }
     // return;
 
 
@@ -69,6 +77,8 @@ void loop() {
 
   if (!overwightblockData())
     // return;
+  // Serial.print(F("4444444444444444444444444444"));
+
 
   Serial.print(F("Reading data from block "));
   Serial.print(blockAddr);
@@ -117,16 +127,16 @@ void loop() {
     }
   }
 
-  Serial.println("UID=====================================================: " + uidString);
+  Serial.println("UID " + uidString);
 
 
   if (uidString == "4 F4 11 5C 39 61 80") {
-    Serial.println("UID====================matches=================================: ");
+    Serial.println("UID==matches ");
 
     digitalWrite(2, HIGH);
     // Do something when the card matches
   } else {
-    Serial.println("UID====================NOOOOO=================================: ");
+    Serial.println("UID==NOOOOO ");
 
     digitalWrite(2, LOW);
   }
@@ -206,8 +216,10 @@ bool authCardByKey() {
 }
 
 
-bool getSectorData() {
+char readSectorData() {
 
+char succ = "A";
+char fai = "B";
   Serial.println(F("Current data in sector:"));
   mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
 
@@ -217,12 +229,12 @@ bool getSectorData() {
   if (status != MFRC522::STATUS_OK) {
     Serial.print(F("MIFARE_Read() failed: "));
     Serial.println(mfrc522.GetStatusCodeName(status));
-    // return false;
+    // return succ;
   }
   Serial.print(F("Data in right block"));
   Serial.print("");
   Serial.print(blockAddr);
-  // return true;
+  // return fai;
   // Serial.println(F(":"));
   // dump_byte_array(buffer, 16);
   // Serial.println();
