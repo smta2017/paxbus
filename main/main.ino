@@ -2,30 +2,42 @@
 #include <MFRC522.h>
 
 #define RST_PIN         9           
-#define SS_PIN          10          
+#define SS_PIN          10  
+
+byte piccType;
+byte status;
+byte trailerBlock   = 7;
+byte sector         = 1;
+byte blockAddr      = 5;
+byte dataBlock[]    = { // NEW DATA to Write
+    0xFF, 0xFF, 0xFF, 0xFF, 
+    0xFF, 0xFF, 0xFF, 0xFF, 
+    0xFF, 0xFF, 0xFF, 0xFF, 
+    0xFF, 0xFF, 0xFF, 0xFF  
+};
+byte buffer[18];
+byte size = sizeof(buffer);
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
 MFRC522::MIFARE_Key key;
 
 void setup() {
-  pinMode(2, OUTPUT);
-  pinMode(3, OUTPUT);
-    Serial.begin(9600); 
-    while (!Serial);    
-    SPI.begin();        
-    mfrc522.PCD_Init(); 
+  pinMode(2,OUTPUT);
+    cardInit();
+    cardProtcolInit();
 
 
-    for (byte i = 0; i < 6; i++) {
+
+    for ( byte i = 0; i < 6; i++) {
         key.keyByte[i] = 0xFF;
     }
 
-    Serial.println(F("Scan a MIFARE Classic PICC to demonstrate read and write."));
-    Serial.print(F("Using key (for A and B):"));
+    //Serial.println(F("Scan a MIFARE Classic PICC to demonstrate read and write."));
+   // Serial.print(F("Using key (for A and B):"));
     dump_byte_array(key.keyByte, MFRC522::MF_KEY_SIZE);
-    Serial.println();
+    //Serial.println();
     
-    Serial.println(F("BEWARE: Data will be written to the PICC, in sector #1"));
+    //Serial.println(F("BEWARE: Data will be written to the PICC, in sector #1"));
 }
 
 void loop() {
@@ -37,50 +49,26 @@ void loop() {
     if ( ! mfrc522.PICC_ReadCardSerial())
         return;
 
-    // Показываем подробности карты
-    Serial.print(F("Card UID:"));
-    dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
-    Serial.println();
-    Serial.print(F("PICC type: "));
-    byte piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
-    Serial.println(mfrc522.PICC_GetTypeName(piccType));
+    
+   printCardInfo();
 
-    // Проверяем совместимость
-    if (    piccType != MFRC522::PICC_TYPE_MIFARE_MINI
-        &&  piccType != MFRC522::PICC_TYPE_MIFARE_1K
-        &&  piccType != MFRC522::PICC_TYPE_MIFARE_4K) {
-        Serial.println(F("This sample only works with MIFARE Classic cards."));
-       
-    }
+    
+    
 
  
-    byte sector         = 1;
-    byte blockAddr      = 5;
-    byte dataBlock[]    = { // NEW DATA to Write
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0xFF, 
-        0xFF, 0xFF, 0xFF, 0xFF  
-    };
-    byte trailerBlock   = 7;
-    byte status;
-    byte buffer[18];
-    byte size = sizeof(buffer);
 
-    // Аутентификация
-    Serial.println(F("Authenticating using key ..."));
-    status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
-    if (status != MFRC522::STATUS_OK) {
-        Serial.print(F("PCD_Authenticate() failed: "));
-        Serial.println(mfrc522.GetStatusCodeName(status));
-    }
+
+    if ( ! authCardByKey())
+      return;
+   
 
 
     Serial.println(F("Current data in sector:"));
     mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
 
   
-    Serial.print(F("Reading data from block ")); Serial.print(blockAddr);
+    Serial.print(F("Reading data from block ")); 
+    Serial.print(blockAddr);
     Serial.println(F(" ..."));
     status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
     if (status != MFRC522::STATUS_OK) {
@@ -155,7 +143,7 @@ void loop() {
     Serial.println("UID=====================================================: " + uidString);
 
 
-    if (uidString == "04 F4 11 5C 39 61 80") {
+    if (uidString == "4 F4 11 5C 39 61 80") {
           Serial.println("UID====================matches=================================: " );
 
       digitalWrite(2,HIGH);
@@ -163,7 +151,7 @@ void loop() {
     } else {
           Serial.println("UID====================NOOOOO=================================: " );
 
-      digitalWrite(3,HIGH);
+      digitalWrite(2,LOW);
     }
 
   
@@ -181,3 +169,38 @@ void dump_byte_array(byte *buffer, byte bufferSize) {
     }
 }
 
+
+void cardInit(){
+Serial.begin(9600); 
+  while (!Serial);  
+
+}
+
+
+
+void cardProtcolInit(){
+
+   SPI.begin();        
+  mfrc522.PCD_Init(); 
+}
+
+
+void printCardInfo(){
+
+   Serial.print(F("Card UID:"));
+    dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
+    Serial.println();
+    Serial.print(F("PICC type: "));
+    piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
+    Serial.println(mfrc522.PICC_GetTypeName(piccType));
+}
+bool authCardByKey() {
+  Serial.println(F("Authenticating using key ..."));
+    status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
+    if (status != MFRC522::STATUS_OK) {
+        Serial.print(F("PCD_Authenticate() failed: "));
+        Serial.println(mfrc522.GetStatusCodeName(status));
+        return false;
+    }
+ return true;
+}
