@@ -42,28 +42,21 @@ void setup() {
 
 void loop() {
 
-
-
   if (!mfrc522.PICC_IsNewCardPresent())
     return;
-  Serial.print(F("00000000000000000000000000000000000000"));
 
 
-  if (!mfrc522.PICC_ReadCardSerial())
-    // return;
-  Serial.print(F("1111111111111111111111111111111"));
+  // if (!mfrc522.PICC_ReadCardSerial())
+  //   return;
 
   printCardInfo();
-  Serial.print(F("22222222222222222222222"));
 
   // if ( ! authCardByKey())
   //   return;
 
-  if (readSectorData()=="A"){
-
-  Serial.print(F("33333333333333333"));
+  if (!readSectorData()) {
+    return;
   }
-    // return;
 
 
 
@@ -75,19 +68,19 @@ void loop() {
   // }
 
 
-  if (!overwightblockData())
+  // if (!overwightblockData())
     // return;
-  // Serial.print(F("4444444444444444444444444444"));
+    // Serial.print(F("4444444444444444444444444444"));
 
 
-  Serial.print(F("Reading data from block "));
+    Serial.print(F("Reading data from block "));
   Serial.print(blockAddr);
   Serial.println(F(" ..."));
   status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("MIFARE_Read() failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-  }
+  // if (status != MFRC522::STATUS_OK) {
+  //   Serial.print(F("MIFARE_Read() failed: "));
+  //   Serial.println(mfrc522.GetStatusCodeName(status));
+  // }
   Serial.print(F("Data in block "));
   Serial.print(blockAddr);
   Serial.println(F(":"));
@@ -130,7 +123,7 @@ void loop() {
   Serial.println("UID " + uidString);
 
 
-  if (uidString == "4 F4 11 5C 39 61 80") {
+  if (uidString != "4 F4 11 5C 39 61 80") {
     Serial.println("UID==matches ");
 
     digitalWrite(2, HIGH);
@@ -148,6 +141,14 @@ void loop() {
 
 
 
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -179,14 +180,6 @@ void cardInit() {
 
 
 
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 void cardProtcolInit() {
 
   SPI.begin();
@@ -216,29 +209,23 @@ bool authCardByKey() {
 }
 
 
-char readSectorData() {
+bool readSectorData() {
 
-char succ = "A";
-char fai = "B";
   Serial.println(F("Current data in sector:"));
   mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
 
-  Serial.print(F("Reading data from block "));
+  Serial.print(F("Reading data from block................................ "));
 
   status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("MIFARE_Read() failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    // return succ;
-  }
+  // if (status != MFRC522::STATUS_OK) {
+  //   Serial.print(F("MIFARE_Read() failed: "));
+  //   Serial.println(mfrc522.GetStatusCodeName(status));
+  //   // return false;
+  // }
   Serial.print(F("Data in right block"));
   Serial.print("");
   Serial.print(blockAddr);
-  // return fai;
-  // Serial.println(F(":"));
-  // dump_byte_array(buffer, 16);
-  // Serial.println();
-  // Serial.println();
+  return true;
 }
 
 
