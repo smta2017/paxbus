@@ -24,30 +24,21 @@ void setup() {
 
 void loop() {
 
-lib.cardInit();
-lib.cardProtcolInit();
-
-
   if (!mfrc522.PICC_IsNewCardPresent())
     return;
-  Serial.print(F("00000000000000000000000000000000000000"));
 
 
-  if (!mfrc522.PICC_ReadCardSerial())
-    // return;
-  Serial.print(F("1111111111111111111111111111111"));
+  // if (!mfrc522.PICC_ReadCardSerial())
+  //   return;
 
-  lib.printCardInfo();
-  Serial.print(F("22222222222222222222222"));
+  printCardInfo();
 
   // if ( ! authCardByKey())
   //   return;
 
-  if (lib.readSectorData()=="A"){
-
-  Serial.print(F("33333333333333333"));
+  if (!readSectorData()) {
+    return;
   }
-    // return;
 
 
 
@@ -59,19 +50,19 @@ lib.cardProtcolInit();
   // }
 
 
-  if (!lib.overwightblockData())
+  // if (!overwightblockData())
     // return;
-  // Serial.print(F("4444444444444444444444444444"));
+    // Serial.print(F("4444444444444444444444444444"));
 
 
-  Serial.print(F("Reading data from block "));
+    Serial.print(F("Reading data from block "));
   Serial.print(blockAddr);
   Serial.println(F(" ..."));
   status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("MIFARE_Read() failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-  }
+  // if (status != MFRC522::STATUS_OK) {
+  //   Serial.print(F("MIFARE_Read() failed: "));
+  //   Serial.println(mfrc522.GetStatusCodeName(status));
+  // }
   Serial.print(F("Data in block "));
   Serial.print(blockAddr);
   Serial.println(F(":"));
@@ -114,7 +105,7 @@ lib.cardProtcolInit();
   Serial.println("UID " + uidString);
 
 
-  if (uidString == "4 F4 11 5C 39 61 80") {
+  if (uidString != "4 F4 11 5C 39 61 80") {
     Serial.println("UID==matches ");
 
     digitalWrite(2, HIGH);
@@ -135,6 +126,11 @@ lib.cardProtcolInit();
 
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -153,3 +149,67 @@ lib.cardProtcolInit();
 
 
 
+void cardProtcolInit() {
+
+  SPI.begin();
+  mfrc522.PCD_Init();
+}
+
+
+void printCardInfo() {
+
+  Serial.print(F("Card UID:"));
+  dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
+  Serial.println();
+  Serial.print(F("PICC type: "));
+  piccType = mfrc522.PICC_GetType(mfrc522.uid.sak);
+  Serial.println(mfrc522.PICC_GetTypeName(piccType));
+}
+
+bool authCardByKey() {
+  Serial.println(F("Authenticating using key ..."));
+  status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, trailerBlock, &key, &(mfrc522.uid));
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print(F("PCD_Authenticate() failed: "));
+    Serial.println(mfrc522.GetStatusCodeName(status));
+    return false;
+  }
+  return true;
+}
+
+
+bool readSectorData() {
+
+  Serial.println(F("Current data in sector:"));
+  mfrc522.PICC_DumpMifareClassicSectorToSerial(&(mfrc522.uid), &key, sector);
+
+  Serial.print(F("Reading data from block................................ "));
+
+  status = mfrc522.MIFARE_Read(blockAddr, buffer, &size);
+  // if (status != MFRC522::STATUS_OK) {
+  //   Serial.print(F("MIFARE_Read() failed: "));
+  //   Serial.println(mfrc522.GetStatusCodeName(status));
+  //   // return false;
+  // }
+  Serial.print(F("Data in right block"));
+  Serial.print("");
+  Serial.print(blockAddr);
+  return true;
+}
+
+
+
+bool overwightblockData() {
+  Serial.print(F("Writing data into block "));
+  Serial.print(blockAddr);
+  Serial.println(F(" ..."));
+  dump_byte_array(dataBlock, 16);
+  Serial.println();
+  status = mfrc522.MIFARE_Write(blockAddr, dataBlock, 16);
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print(F("MIFARE_Write() failed: "));
+    Serial.println(mfrc522.GetStatusCodeName(status));
+    // return false;
+  }
+  // return true;
+}
